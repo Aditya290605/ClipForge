@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PrimaryNavigation from '../../components/navigation/PrimaryNavigation';
 import HeroSection from './components/HeroSection';
 import FeaturesSection from './components/FeaturesSection';
-import TestimonialsSection from './components/TestimonialsSection';
+import TestimonialsSection from './components/TestimonialSection';
 import FAQSection from './components/FAQSection';
 import CTASection from './components/CTASection';
 import Footer from './components/Footer';
@@ -17,7 +17,7 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <PrimaryNavigation user={user} onLogout={handleLogout} />
-      
+
       <main className="pt-16">
         <HeroSection />
         <FeaturesSection />
