@@ -9,6 +9,7 @@ const Button = ({
     fullWidth = false,
     iconName,
     iconPosition = "left",
+    type = "button",
     ...props
 }) => {
     const baseStyles = "inline-flex items-center justify-center rounded font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
@@ -36,6 +37,7 @@ const Button = ({
 
     return (
         <button
+            type={type}
             className={`${baseStyles} ${variantClass} ${sizes[size] || sizes.default} ${widthClass} ${className}`}
             {...props}
         >

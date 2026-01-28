@@ -14,7 +14,7 @@ import Icon from '../../components/AppIcon';
 const VideoEditor = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const mockVideoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
   const videoUrl = location?.state?.videoUrl || mockVideoUrl;
 
@@ -76,7 +76,8 @@ const VideoEditor = () => {
   const handlePrepareDownload = () => {
     navigate('/download-options', {
       state: {
-        videoUrl,
+        videoUrl: videoUrl, // Use the variable from scope
+        videoData: location?.state?.videoData, // Pass original metadata
         startTime,
         endTime,
         speed,
@@ -131,11 +132,10 @@ const VideoEditor = () => {
                     <button
                       key={tab?.id}
                       onClick={() => setActiveTab(tab?.id)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                        activeTab === tab?.id
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeTab === tab?.id
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                      }`}
+                        }`}
                     >
                       <Icon name={tab?.icon} size={16} />
                       {tab?.label}
@@ -216,14 +216,14 @@ const VideoEditor = () => {
 
               <div className="hidden lg:block space-y-4">
                 <SpeedControl speed={speed} onSpeedChange={setSpeed} />
-                
+
                 <TextOverlay
                   texts={texts}
                   onAddText={handleAddText}
                   onUpdateText={handleUpdateText}
                   onRemoveText={handleRemoveText}
                 />
-                
+
                 <ColorAdjustment
                   brightness={brightness}
                   contrast={contrast}
@@ -233,7 +233,7 @@ const VideoEditor = () => {
                   onSaturationChange={setSaturation}
                   onResetFilters={handleResetFilters}
                 />
-                
+
                 <PropertiesPanel
                   duration={duration}
                   startTime={startTime}

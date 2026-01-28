@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import PrimaryNavigation from '../../components/navigation/PrimaryNavigation';
 import WorkflowProgress from '../../components/navigation/WorkflowProgress';
@@ -38,74 +39,63 @@ const VideoInput = () => {
     }
   }, [url]);
 
-  const simulateDownload = (youtubeUrl) => {
+  const handleDownload = async (youtubeUrl) => {
     setIsProcessing(true);
     setDownloadStatus('downloading');
     setDownloadProgress(0);
-    setEstimatedTime('30 seconds');
+    setEstimatedTime('Calculating...');
 
-    const progressInterval = setInterval(() => {
-      setDownloadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          setDownloadStatus('processing');
+    try {
+      // 1. Validate and get metadata
+      const validateResponse = await axios.get(`/api/validate?url=${encodeURIComponent(youtubeUrl)}`);
+      const metadata = validateResponse.data;
 
-          setTimeout(() => {
-            setDownloadStatus('complete');
-            setIsProcessing(false);
-            
-            // Store the actual video URL from YouTube
-            const actualVideoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-            setDownloadedVideoUrl(actualVideoUrl);
-            
-            setVideoData({
-              title: "Amazing Meme Compilation 2026 - Best Funny Moments",
-              thumbnail: "https://images.unsplash.com/photo-1727091051318-95e0a8008b17",
-              thumbnailAlt: "Colorful abstract digital art with vibrant neon lights and geometric patterns creating dynamic visual composition on dark background",
-              duration: 245,
-              fileSize: 52428800,
-              quality: "1080p",
-              format: "MP4",
-              channel: "MemeCreators Official",
-              sourceUrl: youtubeUrl
-            });
-          }, 2000);
+      // 2. Download the video
+      const response = await axios.get(`/api/download?url=${encodeURIComponent(youtubeUrl)}`, {
+        responseType: 'blob',
+        onDownloadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 50000000)); // Fallback total if missing
+          setDownloadProgress(percentCompleted);
 
-          return 100;
+          if (percentCompleted < 50) setEstimatedTime('Downloading...');
+          else setEstimatedTime('Finalizing...');
         }
-
-        const increment = Math.random() * 15 + 5;
-        const newProgress = Math.min(prev + increment, 100);
-
-        if (newProgress < 50) {
-          setEstimatedTime('25 seconds');
-        } else if (newProgress < 75) {
-          setEstimatedTime('15 seconds');
-        } else {
-          setEstimatedTime('5 seconds');
-        }
-
-        return newProgress;
       });
-    }, 500);
+
+      setDownloadStatus('processing');
+      setDownloadProgress(100);
+
+      // Create blob URL
+      const videoBlob = new Blob([response.data], { type: 'video/mp4' });
+      const videoObjectUrl = URL.createObjectURL(videoBlob);
+
+      setDownloadedVideoUrl(videoObjectUrl);
+      setVideoData({
+        title: metadata.title,
+        thumbnail: metadata.thumbnail,
+        thumbnailAlt: metadata.title,
+        duration: parseInt(metadata.duration),
+        fileSize: response.data.size,
+        quality: metadata.format,
+        format: "MP4",
+        channel: metadata.channel,
+        sourceUrl: youtubeUrl
+      });
+
+      setDownloadStatus('complete');
+
+    } catch (error) {
+      console.error('Download failed:', error);
+      setValidationState('network'); // Or a more specific error
+      setDownloadStatus('idle');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleSubmit = () => {
     if (validationState === 'valid') {
-      const randomError = Math.random();
-
-      if (randomError < 0.1) {
-        setValidationState('network');
-        return;
-      } else if (randomError < 0.15) {
-        setValidationState('restricted');
-        return;
-      } else if (randomError < 0.2) {
-        setValidationState('unsupported');
-        return;
-      }
-
-      simulateDownload(url);
+      handleDownload(url);
     }
   };
 
@@ -115,11 +105,11 @@ const VideoInput = () => {
   };
 
   const handleContinue = () => {
-    navigate('/video-editor', { 
-      state: { 
+    navigate('/video-editor', {
+      state: {
         videoData,
         videoUrl: downloadedVideoUrl
-      } 
+      }
     });
   };
 
@@ -141,7 +131,7 @@ const VideoInput = () => {
     <div className="min-h-screen bg-background">
       <PrimaryNavigation user={currentUser} onLogout={handleLogout} />
       <WorkflowProgress />
-      
+
       <main className="pt-32 pb-16 md:pt-36 md:pb-20 lg:pt-40 lg:pb-24">
         <URLInputSection
           url={url}
@@ -152,22 +142,22 @@ const VideoInput = () => {
 
 
         {!isProcessing && !videoData &&
-        <ExampleURLs onSelectExample={handleExampleSelect} />
+          <ExampleURLs onSelectExample={handleExampleSelect} />
         }
 
         {isProcessing &&
-        <DownloadProgress
-          progress={Math.round(downloadProgress)}
-          status={downloadStatus}
-          estimatedTime={estimatedTime} />
+          <DownloadProgress
+            progress={Math.round(downloadProgress)}
+            status={downloadStatus}
+            estimatedTime={estimatedTime} />
 
         }
 
         {videoData && !isProcessing &&
-        <VideoPreview
-          videoData={videoData}
-          onContinue={handleContinue}
-          onCancel={handleCancel} />
+          <VideoPreview
+            videoData={videoData}
+            onContinue={handleContinue}
+            onCancel={handleCancel} />
 
         }
       </main>
